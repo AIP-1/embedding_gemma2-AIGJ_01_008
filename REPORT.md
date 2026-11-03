@@ -12,6 +12,9 @@ Jetson Orin Nano Super에서 EmbeddingGemma 2로 1\~10단계를 진행했다. 10
 | --- | --- |
 | 보드 | Jetson Orin Nano 8GB Super |
 | OS / JetPack | Ubuntu 24.04 / JetPack 7.2.1 (L4T R39.2.1), Python 3.12, CUDA 13.2 |
+| 저장 장치 | NVMe SSD(Samsung 256GB)에서 부팅해 루트(`/`)가 SSD. 별도 `/ssd` 마운트 없이 모델 캐시(`~/.cache/huggingface`, 2.9GB)도 SSD에 있음 |
+| 전원 모드 | MAXN\_SUPER (`nvpmodel -q`, 모드 2) |
+| 스왑 | `/swapfile` 8GB (SSD 위), 11/3 확인 때 2.1GB 사용 중 |
 | PyTorch | 2.11.0+cu130 (jetson-ai-lab sbsa/cu130 인덱스), torchvision 0.26.0, torchaudio 미설치 |
 | 주요 패키지 | sentence-transformers 6.2.0, transformers 5.20.1, ultralytics, PyAV |
 | 모델 | google/embeddinggemma-2 (1.53GB), yolo11n, yolo11n-pose, yoloe-11s-seg |
