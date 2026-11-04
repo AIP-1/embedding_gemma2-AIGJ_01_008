@@ -16,6 +16,28 @@ def grab(name):
     return src[i:j]
 G = {"np": np, "collections": collections, "KP_CONF": KP_CONF, "NOSE": NOSE, "LS": LS, "RS": RS, "LW": LW, "RW": RW,
      "LE": 7, "RE": 8, "body": body, "pairs": {}, "FACE_R": 0.5}
+import re, os
+# 악수 기준값(HS_DIST 등)은 Jetson 앱 파일(pose_app.py, pose_model.py)에 적힌 값을 그대로 쓴다. 못 찾으면 완화 후 값
+HS_DEFAULT = {"HS_DIST": 1.0, "HS_LOW": 4.0, "HS_CONF": 0.3}
+srcs = src + "".join(open(f, encoding="utf-8").read() for f in ("pose_model.py",) if os.path.exists(f))
+def const(name):
+    # "HS_DIST, HS_LOW, HS_CONF = 1.0, 4.0, 0.3" 같은 여러 이름 한 줄 대입도 그대로 실행해 읽는다
+    for line in re.findall(r"^[ \t]*[A-Z_, ]*\b%s\b[A-Z_, ]*=.*$" % name, srcs, re.M):
+        env = {"os": os}
+        try:
+            exec(line.strip(), env)
+            return float(env[name])
+        except Exception:
+            pass
+    return HS_DEFAULT[name]
+def call(fn, *a):
+    while True:
+        try:
+            return G[fn](*a)
+        except NameError as e:
+            name = re.search(r"name '(\w+)'", str(e)).group(1)
+            G[name] = const(name)
+            print(f"  ({name} = {G[name]})")
 for fn in ("near_face", "pose_label", "wave_wrist", "is_wave", "majority", "handshake_pairs"):
     exec(grab(fn), G)
 SMOOTH_S, WAVE_S, FPS = 0.6, 1.5, 15.0
@@ -106,7 +128,7 @@ def handshake(rng, mode, reps=3, hold=3.0, rest=2.0, clasp_drop=0.25):
                 A = jitter(skeleton(ca, cy, sw, rw=aw), rng); B = jitter(skeleton(cb, cy, sw, lw=bw), rng)
                 if phase == "hold" and rng.random() < clasp_drop:
                     A[10, 2] = 0.3; B[9, 2] = 0.3
-                found = G["handshake_pairs"]([A, B], [1, 2], t)
+                found = call("handshake_pairs", [A, B], [1, 2], t)
                 for key in list(G["pairs"]):
                     if key not in found:
                         G["pairs"].pop(key); on_set.discard(key); continue
